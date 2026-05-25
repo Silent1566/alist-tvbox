@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 public class PluginFilterConfigField {
-    // 配置项键名，会直接写入过滤器 extend JSON。
+    // 配置项键名，会直接写入拦截器 extend JSON。
     private String key;
 
     // 面向用户展示的中文名称。

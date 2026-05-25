@@ -116,6 +116,7 @@
       </template>
     </el-popconfirm>
     <el-button @click="refreshStorages">刷新</el-button>
+    <el-button type="primary" @click="showBatchReloadDialog" v-if="selectedStorages.length">批量重新加载</el-button>
     <el-button type="danger" @click="dialogVisible1 = true" v-if="selectedStorages.length">删除</el-button>
   </el-row>
   <el-table :data="storages" border @selection-change="handleSelectionStorages" style="width: 100%">
@@ -302,6 +303,30 @@
     </template>
   </el-dialog>
 
+  <el-dialog v-model="batchReloadVisible" title="批量重新加载" width="40%">
+    <p>即将重新加载选中的 <strong>{{ selectedStorages.length }}</strong> 个失败资源</p>
+    <el-form label-width="140" style="margin-top: 16px;">
+      <el-form-item label="重载间隔(毫秒)">
+        <el-input-number v-model="batchReloadDelay" :min="0" :step="500" :max="30000" controls-position="right"
+          style="width: 200px;" />
+        <span class="hint">每次重新加载后等待的毫秒数（0表示无延迟），适当延迟可规避网盘风控</span>
+      </el-form-item>
+    </el-form>
+    <el-progress v-if="batchReloading" :percentage="batchReloadProgress" :format="batchReloadFormat" />
+    <div v-if="batchReloadDone" style="margin-top: 12px;">
+      <el-tag type="success">成功: {{ batchReloadSuccess }}</el-tag>
+      <el-tag type="danger" style="margin-left: 8px;">失败: {{ selectedStorages.length - batchReloadSuccess }}</el-tag>
+    </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="batchReloadVisible = false" :disabled="batchReloading">取消</el-button>
+        <el-button type="primary" @click="batchReloadStorages" :disabled="batchReloading || batchReloadDone">
+          {{ batchReloading ? '正在加载...' : '开始加载' }}
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+
   <el-dialog v-model="uploadVisible" title="导入分享" width="60%">
     <el-form label-width="140">
       <el-form-item label="类型">
@@ -473,6 +498,12 @@ const uploading = ref(false)
 const exportVisible = ref(false)
 const dialogVisible = ref(false)
 const dialogVisible1 = ref(false)
+const batchReloadVisible = ref(false)
+const batchReloadDelay = ref(2000)
+const batchReloading = ref(false)
+const batchReloadDone = ref(false)
+const batchReloadProgress = ref(0)
+const batchReloadSuccess = ref(0)
 const updateAction = ref(false)
 const batch = ref(false)
 const form = ref<ShareInfo>({
@@ -760,6 +791,50 @@ const reloadStorage = (id: number) => {
       ElMessage.error(data.message)
     }
   })
+}
+
+const showBatchReloadDialog = () => {
+  batchReloading.value = false
+  batchReloadDone.value = false
+  batchReloadProgress.value = 0
+  batchReloadSuccess.value = 0
+  batchReloadVisible.value = true
+}
+
+const batchReloadFormat = (percentage: number) => {
+  const total = selectedStorages.value.length
+  const current = Math.round(percentage / 100 * total)
+  return `${current}/${total}`
+}
+
+const batchReloadStorages = async () => {
+  batchReloading.value = true
+  batchReloadDone.value = false
+  batchReloadSuccess.value = 0
+  const ids = selectedStorages.value.map(s => s.id)
+  const delay = batchReloadDelay.value
+  let success = 0
+
+  for (let i = 0; i < ids.length; i++) {
+    try {
+      const { data } = await axios.post('/api/storages/' + ids[i])
+      if (data.code == 200) {
+        success++
+      }
+    } catch {
+      // continue on error
+    }
+    batchReloadProgress.value = Math.round((i + 1) / ids.length * 100)
+    batchReloadSuccess.value = success
+
+    if (delay > 0 && i < ids.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+
+  batchReloading.value = false
+  batchReloadDone.value = true
+  loadStorages(page1.value)
 }
 
 const refreshShares = () => {

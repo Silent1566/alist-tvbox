@@ -4,7 +4,7 @@
     <el-row justify="end">
       <el-button @click="load">刷新</el-button>
       <el-button @click="showPlugins">插件管理</el-button>
-      <el-button @click="showPluginFilters">过滤器管理</el-button>
+      <el-button @click="showPluginFilters">拦截器管理</el-button>
       <el-button @click="showScan">同步影视</el-button>
       <el-button @click="showPush" v-if="devices.length">推送配置</el-button>
       <el-button type="primary" @click="handleAdd">添加</el-button>
@@ -390,9 +390,9 @@
       </el-table>
     </el-dialog>
 
-    <el-dialog v-model="pluginFilterVisible" title="过滤器管理" fullscreen>
+    <el-dialog v-model="pluginFilterVisible" title="拦截器管理" fullscreen>
       <el-form :inline="true" :model="pluginFilterForm">
-        <el-form-item label="过滤器地址" required>
+        <el-form-item label="拦截器地址" required>
           <el-input v-model="pluginFilterForm.url" style="width: 460px" placeholder="https://example.com/filter.py"/>
         </el-form-item>
         <el-form-item label="名称">
@@ -422,7 +422,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="addPluginFilter">添加过滤器</el-button>
+          <el-button type="primary" @click="addPluginFilter">添加拦截器</el-button>
         </el-form-item>
       </el-form>
 
@@ -521,7 +521,7 @@
       </el-table>
     </el-dialog>
 
-    <el-dialog v-model="pluginFilterConfigVisible" title="过滤器配置" width="860px" destroy-on-close>
+    <el-dialog v-model="pluginFilterConfigVisible" title="拦截器配置" width="860px" destroy-on-close>
       <div v-if="pluginFilterConfigTarget" class="filter-config-dialog">
         <div class="filter-config-header">
           <div class="filter-config-title">{{ pluginFilterConfigTarget.name || pluginFilterConfigTarget.sourceName || pluginFilterConfigTarget.url }}</div>
@@ -564,8 +564,8 @@
                   <el-button link type="danger" @click="removePluginFilterExtraEntry(index)">删除</el-button>
                 </div>
               </div>
-              <div v-else-if="!pluginFilterConfigSchema.allowAdditional" class="filter-config-extra-empty">当前过滤器未开放额外字段，建议只填写已声明的配置项。</div>
-              <div v-else class="filter-config-extra-empty">如果过滤器支持更多自定义参数，可以在这里补充声明外的字段。</div>
+              <div v-else-if="!pluginFilterConfigSchema.allowAdditional" class="filter-config-extra-empty">当前拦截器未开放额外字段，建议只填写已声明的配置项。</div>
+              <div v-else class="filter-config-extra-empty">如果拦截器支持更多自定义参数，可以在这里补充声明外的字段。</div>
             </div>
           </el-tab-pane>
 
@@ -938,7 +938,7 @@ const normalizePluginFilterConfigSchema = (schema?: PluginFilterConfigSchema): P
 
 const pluginFilterSchemaSourceLabel = (source: string) => {
   if (source === 'declared') {
-    return '过滤器脚本声明'
+    return '拦截器脚本声明'
   }
   if (source === 'none') {
     return '未声明'
@@ -978,7 +978,7 @@ const getPluginFilterPluginIdList = (filter: PluginFilter) => {
 
 const validatePluginFilter = (filter: PluginFilter) => {
   if (!filter.url.trim()) {
-    ElMessage.warning('请输入过滤器地址')
+    ElMessage.warning('请输入拦截器地址')
     return false
   }
   if (getPluginFilterStageList(filter).length === 0) {
@@ -1447,7 +1447,7 @@ const deleteSelectedPluginFilters = () => {
   axios.post('/api/plugin-filters/delete-batch', {
     ids: selectedPluginFilterIds.value
   }).then(({data}) => {
-    ElMessage.success(`已删除 ${data} 个过滤器`)
+    ElMessage.success(`已删除 ${data} 个拦截器`)
     selectedPluginFilterIds.value = []
     loadPluginFilters()
   })

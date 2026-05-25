@@ -31,7 +31,7 @@ public class PluginFilterService {
     // 兼容早期注释式 schema 声明：
     // // @config-schema { ... }
     private static final Pattern FILTER_CONFIG_SCHEMA_JSON = Pattern.compile("(?s)//\\s*@config-schema\\s*(\\{.*?})\\s*(?:\\R\\s*//\\s*@|\\z)");
-    // 当前正式约定：过滤器脚本顶层声明 FILTER_CONFIG_SCHEMA = { ... }
+    // 当前正式约定：拦截器脚本顶层声明 FILTER_CONFIG_SCHEMA = { ... }
     // 这样不会影响旧运行环境执行，同时便于主项目通用读取。
     private static final Pattern FILTER_CONFIG_SCHEMA_CONST = Pattern.compile("(?s)^\\s*FILTER_CONFIG_SCHEMA\\s*=\\s*(\\{.*?})\\s*(?:\\R\\s*\\w+\\s*=|\\R\\s*class\\s+|\\z)", Pattern.MULTILINE);
     private static final String GITHUB_PROXY = "github_proxy";
@@ -154,7 +154,7 @@ public class PluginFilterService {
     public String readContent(Integer id) {
         PluginFilter filter = pluginFilterRepository.findById(id).orElseThrow(NotFoundException::new);
         if (StringUtils.isBlank(filter.getContent())) {
-            throw new BadRequestException("过滤器内容为空");
+            throw new BadRequestException("拦截器内容为空");
         }
         return filter.getContent();
     }
@@ -180,13 +180,13 @@ public class PluginFilterService {
     private void validateUrlUniqueness(String url, Integer currentId) {
         pluginFilterRepository.findByUrl(url).ifPresent(other -> {
             if (currentId == null || !other.getId().equals(currentId)) {
-                throw new BadRequestException("过滤器地址重复");
+                throw new BadRequestException("拦截器地址重复");
             }
         });
     }
 
     private DownloadedFilter downloadFilterData(String url) {
-        String body = downloadText(url, "过滤器地址不可访问");
+        String body = downloadText(url, "拦截器地址不可访问");
         return new DownloadedFilter(body, deriveSourceName(url), extractFilterVersion(body));
     }
 
@@ -259,7 +259,7 @@ public class PluginFilterService {
                 .distinct()
                 .collect(Collectors.joining(","));
         if (StringUtils.isBlank(value)) {
-            throw new BadRequestException("请选择过滤器拦截点");
+            throw new BadRequestException("请选择拦截器拦截点");
         }
         return value;
     }
@@ -275,7 +275,7 @@ public class PluginFilterService {
         if (SCOPE_INCLUDE.equals(pluginScope) || SCOPE_EXCLUDE.equals(pluginScope)) {
             return pluginScope;
         }
-        throw new BadRequestException("过滤器插件作用范围不正确");
+        throw new BadRequestException("拦截器插件作用范围不正确");
     }
 
     private String normalizePluginIds(String pluginScope, String pluginIds) {
@@ -311,11 +311,11 @@ public class PluginFilterService {
     }
 
     private PluginFilterConfigSchema buildConfigSchema(String content, String sourceName) {
-        // 只读取过滤器自带声明，不再在主项目中维护任何写死字段映射。
+        // 只读取拦截器自带声明，不再在主项目中维护任何写死字段映射。
         PluginFilterConfigSchema declared = parseDeclaredSchema(content);
         if (declared != null) {
             if (StringUtils.isBlank(declared.getDescription())) {
-                declared.setDescription("来自过滤器脚本内声明");
+                declared.setDescription("来自拦截器脚本内声明");
             }
             if (StringUtils.isBlank(declared.getSource())) {
                 declared.setSource("declared");
@@ -324,7 +324,7 @@ public class PluginFilterService {
         }
         PluginFilterConfigSchema schema = new PluginFilterConfigSchema();
         schema.setSource("none");
-        schema.setDescription("过滤器未声明配置结构，可直接输入 JSON");
+        schema.setDescription("拦截器未声明配置结构，可直接输入 JSON");
         return schema;
     }
 

@@ -1239,7 +1239,7 @@ public class SubscriptionService {
         if (StringUtils.isNotBlank(plugin.getExtend())) {
             map.put("data", plugin.getExtend());
         }
-        // 每个插件站点只下发与自己作用域匹配的过滤器
+        // 每个插件站点只下发与自己作用域匹配的拦截器
         List<Map<String, Object>> filters = buildPluginFilters(plugin);
         if (!filters.isEmpty()) {
             map.put("filters", filters);
@@ -1280,7 +1280,7 @@ public class SubscriptionService {
         if ("all".equals(scope)) {
             return true;
         }
-        // 过滤器按插件 ID 生效，避免插件改名后作用范围失效
+        // 拦截器按插件 ID 生效，避免插件改名后作用范围失效
         Set<String> pluginIds = parsePluginFilterPluginIds(filter.getPluginIds());
         String pluginId = plugin.getId() == null ? "" : plugin.getId().toString();
         boolean selected = pluginIds.contains(pluginId);
